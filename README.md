@@ -34,11 +34,22 @@ cd voxtype-hyprland-overlay
 bash install.sh
 ```
 
-Then edit `~/.config/voxtype-overlay/config.sh` — at minimum set your `SPEAKER` device:
+Then edit `~/.config/voxtype-overlay/config.sh` — at minimum set your `SPEAKER` device.
+
+Run one of the following to list available output devices:
 
 ```bash
-pactl list sinks short | awk '{print $2}'
+# Option 1 — pactl (PipeWire/PulseAudio), shows ALSA sink names
+pactl list sinks | grep -E 'Name:|Description:'
+
+# Option 2 — wpctl (WirePlumber), shows friendly names alongside sink IDs
+wpctl status
+
+# Option 3 — pactl short form (tab-separated: id, name, driver, format, state)
+pactl list sinks short
 ```
+
+Look for the **Name:** value (e.g. `alsa_output.pci-0000_80_1f.3.analog-stereo`) from option 1 or 3, or use the friendly name shown by `wpctl status` to identify the right device. Set that name as `SPEAKER` in your config.
 
 Add the keybind to your Hyprland config (replace the path):
 

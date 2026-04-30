@@ -27,7 +27,8 @@ if [ ! -f "$CONFIG_DIR/config.sh" ]; then
     cp "$SCRIPT_DIR/config.sh" "$CONFIG_DIR/config.sh"
     echo "    Config written to $CONFIG_DIR/config.sh"
     echo "    *** Edit it to set your SPEAKER device. ***"
-    echo "    Run: pactl list sinks short | awk '{print \$2}'"
+    echo "    Run: pactl list sinks | grep -E 'Name:|Description:'"
+    echo "    or:  wpctl status"
 else
     echo "    Config already exists at $CONFIG_DIR/config.sh — not overwriting."
 fi
