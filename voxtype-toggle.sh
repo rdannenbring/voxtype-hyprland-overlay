@@ -66,7 +66,7 @@ for c in clients:
         print(c['address'], c['workspace']['id'])
 " | while IFS=' ' read -r addr ws_id; do
         echo "$addr $ws_id" >> "$HIDDEN_FLOATS_FILE"
-        hyprctl dispatch movetoworkspacesilent "special:voxtype,$addr"
+        hyprctl dispatch movetoworkspacesilent "special:voxtype,address:$addr"
     done
 }
 
@@ -74,7 +74,7 @@ for c in clients:
 restore_hidden_floats() {
     [ -f "$HIDDEN_FLOATS_FILE" ] || return
     while IFS=' ' read -r addr ws_id; do
-        [ -n "$addr" ] && hyprctl dispatch movetoworkspacesilent "$ws_id,address:$addr"
+        [ -n "$addr" ] && hyprctl dispatch movetoworkspace "$ws_id,address:$addr"
     done < "$HIDDEN_FLOATS_FILE"
     rm -f "$HIDDEN_FLOATS_FILE"
 }
