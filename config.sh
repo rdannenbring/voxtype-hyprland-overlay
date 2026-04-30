@@ -38,8 +38,11 @@ LABEL_FONT_SIZE=18    # points
 # MIC_ICON="/path/to/custom-icon.svg"
 MIC_ICON_SIZE=160     # pixels
 
-# Pulse animation (opacity oscillation of the mic icon)
+# Mic icon pulse animation (opacity oscillation)
+# Set PULSE_ENABLED=false when using an animated GIF as MIC_ICON —
+# GTK4 will play the GIF's own animation automatically.
+PULSE_ENABLED=true
 PULSE_SPEED=0.025     # opacity change per tick (higher = faster)
-PULSE_MIN=0.35        # minimum opacity
-PULSE_MAX=1.0         # maximum opacity
-PULSE_TICK_MS=40      # milliseconds between ticks
+PULSE_MIN=0.35        # minimum opacity (0.0–1.0)
+PULSE_MAX=1.0         # maximum opacity (0.0–1.0)
+PULSE_TICK_MS=40      # milliseconds between ticks (lower = smoother/faster)

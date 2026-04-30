@@ -56,6 +56,7 @@ MIC_ICON           = os.environ.get(
     '/usr/share/icons/Papirus/128x128/devices/audio-input-microphone.svg'
 )
 MIC_ICON_SIZE      = _int('VOXTYPE_MIC_ICON_SIZE', 160)
+PULSE_ENABLED      = _bool('VOXTYPE_PULSE_ENABLED', True)
 PULSE_SPEED        = _float('VOXTYPE_PULSE_SPEED', 0.025)
 PULSE_MIN          = _float('VOXTYPE_PULSE_MIN', 0.35)
 PULSE_MAX          = _float('VOXTYPE_PULSE_MAX', 1.0)
@@ -135,7 +136,8 @@ class RecordingOverlay(Gtk.ApplicationWindow):
 
         self._pulse_val = PULSE_MAX
         self._pulse_dir = -1
-        GLib.timeout_add(PULSE_TICK_MS, self._pulse)
+        if PULSE_ENABLED:
+            GLib.timeout_add(PULSE_TICK_MS, self._pulse)
 
     def _draw(self, area, cr, width, height):
         # Clear entire surface to transparent
