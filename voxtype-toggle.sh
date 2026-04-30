@@ -46,6 +46,38 @@ STOP_SOUND="${STOP_SOUND:-$SCRIPT_DIR/sounds/beep-stop.wav}"
 
 VOLUME_FILE="/tmp/voxtype-speaker-volume"
 OVERLAY_PID_FILE="/tmp/voxtype-overlay-pid"
+HIDDEN_FLOATS_FILE="/tmp/voxtype-hidden-floats"
+
+# Move floating windows that overlap the active window to a hidden special workspace
+hide_overlapping_floats() {
+    local win_addr="$1" win_x=$2 win_y=$3 win_w=$4 win_h=$5
+    rm -f "$HIDDEN_FLOATS_FILE"
+    hyprctl clients -j | python3 -c "
+import sys, json
+clients = json.load(sys.stdin)
+wx, wy, ww, wh = $win_x, $win_y, $win_w, $win_h
+skip = '$win_addr'
+for c in clients:
+    if not c.get('floating') or c['address'] == skip:
+        continue
+    cx, cy = c['at']
+    cw, ch = c['size']
+    if cx < wx + ww and cx + cw > wx and cy < wy + wh and cy + ch > wy:
+        print(c['address'], c['workspace']['id'])
+" | while IFS=' ' read -r addr ws_id; do
+        echo "$addr $ws_id" >> "$HIDDEN_FLOATS_FILE"
+        hyprctl dispatch movetoworkspacesilent "special:voxtype,$addr"
+    done
+}
+
+# Restore hidden floating windows to their original workspaces
+restore_hidden_floats() {
+    [ -f "$HIDDEN_FLOATS_FILE" ] || return
+    while IFS=' ' read -r addr ws_id; do
+        [ -n "$addr" ] && hyprctl dispatch movetoworkspacesilent "$ws_id,address:$addr"
+    done < "$HIDDEN_FLOATS_FILE"
+    rm -f "$HIDDEN_FLOATS_FILE"
+}
 
 fade_volume() {
     local from=$1 to=$2
@@ -57,18 +89,18 @@ fade_volume() {
 }
 
 launch_overlay() {
-    # Raise the active window above any floating windows so the cutout isn't obscured
-    hyprctl dispatch bringactivetotop
-
     local win_info
     win_info=$(hyprctl activewindow -j)
 
-    local win_x win_y win_w win_h mon_id
+    local win_x win_y win_w win_h win_addr mon_id
     win_x=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['at'][0])")
     win_y=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['at'][1])")
     win_w=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['size'][0])")
     win_h=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['size'][1])")
+    win_addr=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['address'])")
     mon_id=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['monitor'])")
+
+    hide_overlapping_floats "$win_addr" "$win_x" "$win_y" "$win_w" "$win_h"
 
     local mon_x mon_y
     mon_x=$(hyprctl monitors -j | python3 -c "import sys,json; m=[m for m in json.load(sys.stdin) if m['id']==$mon_id][0]; print(m['x'])")
@@ -121,6 +153,7 @@ if [ "$(voxtype status 2>/dev/null)" = "idle" ]; then
 else
     # Stopping recording
     kill_overlay
+    restore_hidden_floats
 
     if [ -n "$SPEAKER" ] && [ "$DUCK_ENABLED" = "true" ] && [ -f "$VOLUME_FILE" ]; then
         saved=$(cat "$VOLUME_FILE")
