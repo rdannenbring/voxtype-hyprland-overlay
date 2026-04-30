@@ -57,6 +57,9 @@ fade_volume() {
 }
 
 launch_overlay() {
+    # Raise the active window above any floating windows so the cutout isn't obscured
+    hyprctl dispatch bringactivetotop
+
     local win_info
     win_info=$(hyprctl activewindow -j)
 
