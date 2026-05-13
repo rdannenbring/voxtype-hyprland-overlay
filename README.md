@@ -164,6 +164,26 @@ Thickness of the border in pixels.
 
 ---
 
+### Voxtype built-in OSD
+
+Requires voxtype 0.7.0+. The OSD is a compact live waveform that appears at the bottom of your screen while the mic is active — separate from the full-screen dim overlay provided by this addon.
+
+```bash
+VOXTYPE_OSD_ENABLED=false   # true to show the waveform visualizer
+VOXTYPE_OSD_FRONTEND="gtk4" # "gtk4" or "native" (wgpu/egui)
+VOXTYPE_OSD_POSITION="bottom-center"
+```
+
+After changing these, run:
+
+```bash
+bash voxtype-osd-sync.sh
+```
+
+This patches `~/.config/voxtype/config.toml` and restarts the voxtype daemon.
+
+---
+
 ### Mic widget
 
 ```bash

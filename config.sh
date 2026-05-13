@@ -31,6 +31,14 @@ BORDER_ENABLED=true
 BORDER_COLOR="#33CCFF" # hex color, e.g. "#FF4444" for red, "#33FF88" for green
 BORDER_WIDTH=4         # pixels
 
+# ── Voxtype built-in OSD (audio waveform visualizer) ──────────────────────────
+# The OSD shows a live input waveform at the bottom of your screen while recording.
+# Requires voxtype 0.7.0+. Change takes effect after running: voxtype-osd-sync.sh
+# or reinstalling. frontend: "gtk4" or "native"
+VOXTYPE_OSD_ENABLED=false
+VOXTYPE_OSD_FRONTEND="gtk4"
+VOXTYPE_OSD_POSITION="bottom-center"
+
 # ── Mic widget ─────────────────────────────────────────────────────────────────
 RECORDING_LABEL="RECORDING"
 LABEL_FONT_SIZE=18    # points

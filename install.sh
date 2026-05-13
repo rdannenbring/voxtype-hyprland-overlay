@@ -35,6 +35,10 @@ fi
 
 chmod +x "$SCRIPT_DIR/voxtype-toggle.sh"
 chmod +x "$SCRIPT_DIR/voxtype-overlay.py"
+chmod +x "$SCRIPT_DIR/voxtype-osd-sync.sh"
+
+echo "==> Applying OSD settings to voxtype config..."
+bash "$SCRIPT_DIR/voxtype-osd-sync.sh"
 
 echo ""
 echo "==> Done. Add this to your Hyprland config:"

@@ -48,6 +48,30 @@ VOLUME_FILE="/tmp/voxtype-speaker-volume"
 OVERLAY_PID_FILE="/tmp/voxtype-overlay-pid"
 HIDDEN_FLOATS_FILE="/tmp/voxtype-hidden-floats"
 
+kill_overlay() {
+    if [ -f "$OVERLAY_PID_FILE" ]; then
+        kill "$(cat "$OVERLAY_PID_FILE")" 2>/dev/null
+        rm -f "$OVERLAY_PID_FILE"
+    fi
+}
+
+# Restore hidden floating windows to their original workspaces
+restore_hidden_floats() {
+    [ -f "$HIDDEN_FLOATS_FILE" ] || return
+    while IFS=' ' read -r addr ws_id; do
+        [ -n "$addr" ] && hyprctl dispatch movetoworkspace "$ws_id,address:$addr"
+    done < "$HIDDEN_FLOATS_FILE"
+    rm -f "$HIDDEN_FLOATS_FILE"
+}
+
+# ── Abort logic ───────────────────────────────────────────────────────────────
+if [ "$1" = "abort" ]; then
+    kill_overlay
+    restore_hidden_floats
+    voxtype record stop 2>/dev/null
+    exit 0
+fi
+
 # Move floating windows that overlap the active window to a hidden special workspace
 hide_overlapping_floats() {
     local win_addr="$1" win_x=$2 win_y=$3 win_w=$4 win_h=$5
@@ -68,15 +92,6 @@ for c in clients:
         echo "$addr $ws_id" >> "$HIDDEN_FLOATS_FILE"
         hyprctl dispatch movetoworkspacesilent "special:voxtype,address:$addr"
     done
-}
-
-# Restore hidden floating windows to their original workspaces
-restore_hidden_floats() {
-    [ -f "$HIDDEN_FLOATS_FILE" ] || return
-    while IFS=' ' read -r addr ws_id; do
-        [ -n "$addr" ] && hyprctl dispatch movetoworkspace "$ws_id,address:$addr"
-    done < "$HIDDEN_FLOATS_FILE"
-    rm -f "$HIDDEN_FLOATS_FILE"
 }
 
 fade_volume() {
@@ -124,13 +139,6 @@ launch_overlay() {
         "$win_x" "$win_y" "$win_w" "$win_h" "$mon_id" "$mon_x" "$mon_y" &
 
     echo $! > "$OVERLAY_PID_FILE"
-}
-
-kill_overlay() {
-    if [ -f "$OVERLAY_PID_FILE" ]; then
-        kill "$(cat "$OVERLAY_PID_FILE")" 2>/dev/null
-        rm -f "$OVERLAY_PID_FILE"
-    fi
 }
 
 # ── Main toggle logic ───────────────────────────────────────────────────────────
