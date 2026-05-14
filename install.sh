@@ -15,7 +15,14 @@ done
 for mod in gi cairo; do
     python3 -c "import $mod" 2>/dev/null || missing+=("python-$mod")
 done
-[ ${#missing[@]} -gt 0 ] && echo "Missing: ${missing[*]}" && echo "Install these before continuing." && exit 1
+if [ ${#missing[@]} -gt 0 ]; then
+    echo "Missing dependencies: ${missing[*]}"
+    echo ""
+    echo "Arch Linux:     sudo pacman -S python-gobject python-cairo gtk4-layer-shell ffmpeg"
+    echo "Ubuntu/Debian:  sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-4.0 ffmpeg"
+    echo "Fedora:         sudo dnf install python3-gobject python3-cairo gtk4-layer-shell ffmpeg"
+    exit 1
+fi
 echo "    All dependencies found."
 
 echo "==> Generating sounds..."

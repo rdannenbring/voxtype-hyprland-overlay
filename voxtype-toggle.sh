@@ -7,6 +7,10 @@
 # Hyprland example:
 #   bind = Super, C, exec, /path/to/voxtype-toggle.sh
 #
+# Pass "abort" as the first argument to kill the overlay and stop recording
+# without toggling (useful for emergency cleanup):
+#   bind = Super, Escape, exec, /path/to/voxtype-toggle.sh abort
+#
 # Dependencies: voxtype, hyprctl, pactl, paplay, python3,
 #               gtk4, gtk4-layer-shell, python-gobject, python-cairo
 
@@ -55,7 +59,6 @@ kill_overlay() {
     fi
 }
 
-# Restore hidden floating windows to their original workspaces
 restore_hidden_floats() {
     [ -f "$HIDDEN_FLOATS_FILE" ] || return
     while IFS=' ' read -r addr ws_id; do
@@ -64,7 +67,7 @@ restore_hidden_floats() {
     rm -f "$HIDDEN_FLOATS_FILE"
 }
 
-# ── Abort logic ───────────────────────────────────────────────────────────────
+# ── Abort: kill overlay + stop recording without toggling ──────────────────────
 if [ "$1" = "abort" ]; then
     kill_overlay
     restore_hidden_floats
@@ -97,7 +100,7 @@ for c in clients:
 fade_volume() {
     local from=$1 to=$2
     local diff=$((to - from))
-    for i in $(seq 1 "$DUCK_FADE_STEPS"); do
+    for ((i=1; i<=DUCK_FADE_STEPS; i++)); do
         pactl set-sink-volume "$SPEAKER" "$((from + diff * i / DUCK_FADE_STEPS))%"
         sleep "$DUCK_FADE_DELAY"
     done
@@ -105,21 +108,30 @@ fade_volume() {
 
 launch_overlay() {
     local win_info
-    win_info=$(hyprctl activewindow -j)
+    win_info=$(hyprctl activewindow -j 2>/dev/null) || { echo "voxtype-toggle: hyprctl unavailable" >&2; return 1; }
 
+    # Parse all active window fields in a single python3 call
     local win_x win_y win_w win_h win_addr mon_id
-    win_x=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['at'][0])")
-    win_y=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['at'][1])")
-    win_w=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['size'][0])")
-    win_h=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['size'][1])")
-    win_addr=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['address'])")
-    mon_id=$(printf '%s' "$win_info" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['monitor'])")
+    read -r win_x win_y win_w win_h win_addr mon_id < <(
+        printf '%s' "$win_info" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(d['at'][0], d['at'][1], d['size'][0], d['size'][1], d['address'], d['monitor'])
+"
+    )
 
     hide_overlapping_floats "$win_addr" "$win_x" "$win_y" "$win_w" "$win_h"
 
+    # Parse monitor offset in a single python3 call
     local mon_x mon_y
-    mon_x=$(hyprctl monitors -j | python3 -c "import sys,json; m=[m for m in json.load(sys.stdin) if m['id']==$mon_id][0]; print(m['x'])")
-    mon_y=$(hyprctl monitors -j | python3 -c "import sys,json; m=[m for m in json.load(sys.stdin) if m['id']==$mon_id][0]; print(m['y'])")
+    read -r mon_x mon_y < <(
+        hyprctl monitors -j | python3 -c "
+import sys, json
+monitors = json.load(sys.stdin)
+m = next((m for m in monitors if m['id'] == $mon_id), None)
+print(m['x'], m['y']) if m else print(0, 0)
+"
+    )
 
     VOXTYPE_OVERLAY_OPACITY="$OVERLAY_OPACITY" \
     VOXTYPE_BORDER_ENABLED="$BORDER_ENABLED" \
@@ -145,7 +157,7 @@ launch_overlay() {
 if [ "$(voxtype status 2>/dev/null)" = "idle" ]; then
     # Starting recording
     if [ -n "$SPEAKER" ] && [ "$DUCK_ENABLED" = "true" ]; then
-        current=$(pactl get-sink-volume "$SPEAKER" | grep -oP '\d+(?=%)' | head -1)
+        current=$(pactl get-sink-volume "$SPEAKER" | grep -o '[0-9]*%' | head -1 | tr -d '%')
         echo "$current" > "$VOLUME_FILE"
     fi
 

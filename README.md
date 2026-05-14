@@ -1,6 +1,6 @@
 # voxtype-hyprland-overlay
 
-A Hyprland companion for [VoxType](https://github.com/YOUR_VOXTYPE_REPO) that adds:
+A Hyprland companion for [VoxType](https://github.com/peteonrails/voxtype) that adds:
 
 - **Recording overlay** — dims all monitors with a pulsing mic icon while you dictate
 - **Active window cutout** — the target window stays visible with a highlight border so you always know where text will land
@@ -24,6 +24,17 @@ A Hyprland companion for [VoxType](https://github.com/YOUR_VOXTYPE_REPO) that ad
 Arch Linux:
 ```bash
 sudo pacman -S python-gobject python-cairo gtk4-layer-shell ffmpeg
+```
+
+Ubuntu/Debian:
+```bash
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-4.0 ffmpeg
+# gtk4-layer-shell may need to be built from source on older releases
+```
+
+Fedora:
+```bash
+sudo dnf install python3-gobject python3-cairo gtk4-layer-shell ffmpeg
 ```
 
 ## Install
